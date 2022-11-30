@@ -92,4 +92,13 @@ int FinishEndingScreen(void);
 }
 #endif
 
+
+struct GameObject
+{
+	Vector2 position;
+	Rectangle rect;
+	
+	Texture2D* ptrTexture;
+};
+
 #endif // SCREENS_H

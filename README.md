@@ -41,15 +41,13 @@ _TODO: Show your game to the world, animated GIFs recommended!._
 
 ### Developers
 
- - $(Developer 01) - $(Role/Tasks Developed)
- - $(Developer 02) - $(Role/Tasks Developed)
- - $(Developer 03) - $(Role/Tasks Developed)
+ - Imandana Rahimaswara - Programmer, Composer
+ - Satya Fikri 			- Game Design, Game Artist
 
 ### Links
 
  - YouTube Gameplay: $(YouTube Link)
  - itch.io Release: $(itch.io Game Page)
- - Steam Release: $(Steam Game Page)
 
 ### License
 
@@ -57,4 +55,4 @@ This game sources are licensed under an unmodified zlib/libpng license, which is
 
 $(Additional Licenses)
 
-*Copyright (c) $(Year) $(User Name) ($(User Twitter/GitHub Name))*
+*Copyright (c) 2022 Jenggot Malam (https://github.com/Jenggot-Malam-Games)*
