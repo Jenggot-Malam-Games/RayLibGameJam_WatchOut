@@ -14,26 +14,23 @@ _Copyright (c) 2014-2022 Ramon Santamaria ([@raysan5](https://twitter.com/raysan
 
 -----------------------------------
 
-## $(Game Title)
+## Watchout
 
-![$(Game Title)](screenshots/screenshot000.png "$(Game Title)")
+![Watchout](screenshots/screenshot000.png "Watchout")
 
 ### Description
 
-$(Your Game Description)
+Shoot all the Asteroid
 
 ### Features
 
- - $(Game Feature 01)
- - $(Game Feature 02)
- - $(Game Feature 03)
+ - Shooting
 
 ### Controls
 
-Keyboard:
- - $(Game Control 01)
- - $(Game Control 02)
- - $(Game Control 03)
+Mouse Click
+and 
+TouchScreen
 
 ### Screenshots
 
@@ -47,12 +44,11 @@ _TODO: Show your game to the world, animated GIFs recommended!._
 ### Links
 
  - YouTube Gameplay: $(YouTube Link)
- - itch.io Release: $(itch.io Game Page)
+ - itch.io Release: https://imandana.itch.io/watchout
 
 ### License
 
 This game sources are licensed under an unmodified zlib/libpng license, which is an OSI-certified, BSD-like license that allows static linking with closed source software. Check [LICENSE](LICENSE) for further details.
 
-$(Additional Licenses)
 
 *Copyright (c) 2022 Jenggot Malam (https://github.com/Jenggot-Malam-Games)*
