@@ -32,6 +32,12 @@
 static int framesCounter = 0;
 static int finishScreen = 0;
 
+////////////////////////
+static int titleState = 0; // 0 is cover, 1 is instruction
+
+extern Texture2D cover ;
+extern Texture2D instruction ;
+
 //----------------------------------------------------------------------------------
 // Title Screen Functions Definition
 //----------------------------------------------------------------------------------
@@ -47,15 +53,27 @@ void InitTitleScreen(void)
 // Title Screen Update logic
 void UpdateTitleScreen(void)
 {
-    // TODO: Update TITLE screen variables here!
+	switch(titleState)
+	{
+		case 0:
+			    if (IsKeyPressed(KEY_ENTER) || IsGestureDetected(GESTURE_TAP))
+				{
+					titleState = 1;
+					PlaySound(fxCoin);
+				}
+		break;
+		
+		case 1:
+			    // Press enter or tap to change to GAMEPLAY screen
+				if (IsKeyPressed(KEY_ENTER) || IsGestureDetected(GESTURE_TAP))
+				{
+					//finishScreen = 1;   // OPTIONS
+					finishScreen = 2;   // GAMEPLAY
+					PlaySound(fxCoin);
+				}
+		break;
 
-    // Press enter or tap to change to GAMEPLAY screen
-    if (IsKeyPressed(KEY_ENTER) || IsGestureDetected(GESTURE_TAP))
-    {
-        //finishScreen = 1;   // OPTIONS
-        finishScreen = 2;   // GAMEPLAY
-        PlaySound(fxCoin);
-    }
+	}
 }
 
 // Title Screen Draw logic
@@ -63,15 +81,32 @@ void DrawTitleScreen(void)
 {
     // TODO: Draw TITLE screen here!
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), GREEN);
-    Vector2 pos = { 20, 10 };
-    DrawTextEx(font, "TITLE SCREEN", pos, font.baseSize*3.0f, 4, DARKGREEN);
-    DrawText("PRESS ENTER or TAP to JUMP to GAMEPLAY SCREEN", 120, 220, 20, DARKGREEN);
+	Vector2 pos = { 20, 10 };
+	switch(titleState)
+	{
+		case 0:
+			DrawTexture(cover, 0, 0, WHITE);
+			
+			DrawTextEx(font, "TAP TO START", pos, font.baseSize*3.0f, 4, DARKGREEN);
+			
+		break;
+		
+		case 1:
+			DrawTexture(instruction, 0, 0, WHITE);
+			
+			DrawTextEx(font, "INSTRUCTION", pos, font.baseSize*3.0f, 4, DARKGREEN);
+			pos = (Vector2){ 20, 140 };
+			DrawTextEx(font, "TAP TO FIRE!!!", pos, font.baseSize*3.0f, 4, RED);
+		break;
+		
+	}
 }
 
 // Title Screen Unload logic
 void UnloadTitleScreen(void)
 {
     // TODO: Unload TITLE screen variables here!
+	titleState = 0;
 }
 
 // Title Screen should finish?

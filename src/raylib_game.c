@@ -27,6 +27,7 @@ GameScreen currentScreen = LOGO;
 Font font = { 0 };
 Music music = { 0 };
 Sound fxCoin = { 0 };
+Sound fxExplode = { 0 };
 
 //----------------------------------------------------------------------------------
 // Local Variables Definition (local to this module)
@@ -65,8 +66,9 @@ int main(void)
 
     // Load global data (assets that must be available in all screens, i.e. font)
     font = LoadFont("resources/mecha.png");
-    music = LoadMusicStream("resources/ambient.ogg");
-    fxCoin = LoadSound("resources/coin.wav");
+    music = LoadMusicStream("resources/bgm.ogg");
+    fxCoin = LoadSound("resources/rocket.ogg");
+    fxExplode = LoadSound("resources/explode.ogg");
 
     SetMusicVolume(music, 1.0f);
     PlayMusicStream(music);

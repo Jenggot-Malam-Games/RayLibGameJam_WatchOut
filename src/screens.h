@@ -38,6 +38,7 @@ extern GameScreen currentScreen;
 extern Font font;
 extern Music music;
 extern Sound fxCoin;
+extern Sound fxExplode;
 
 #ifdef __cplusplus
 extern "C" {            // Prevents name mangling of functions
@@ -92,6 +93,8 @@ int FinishEndingScreen(void);
 }
 #endif
 
+// My Custom
+extern void DrawTextureExCenter(Texture2D texture, Vector2 position, float rotation, float scale, Color tint);
 
 struct GameObject
 {
@@ -100,5 +103,36 @@ struct GameObject
 	
 	Texture2D* ptrTexture;
 };
+
+
+#define TEXTUREDATACOUNT 20
+
+#define ASTEROIDCOUNT 20
+#define BIGASTEROIDCOUNT 20
+
+#define MISSILECOUNT 30
+#define BIGMISSILECOUNT 50
+
+
+// Load once
+extern Texture2D textureData[TEXTUREDATACOUNT];
+// 0 asteroid
+// 1 missile
+
+
+extern struct GameObject asteroids[ASTEROIDCOUNT];
+extern struct GameObject missiles[MISSILECOUNT];
+
+extern struct GameObject asteroidsBig[BIGASTEROIDCOUNT];
+extern struct GameObject missilesBig[BIGMISSILECOUNT];
+
+/* extern struct GameObject boss1[5];
+extern struct GameObject bossRay[50];
+ */
+/* #define RMEM_IMPLEMENTATION
+#include "extras/rmem.h"
+ */
+#define EASINGS_STATIC_INLINE
+#include "extras/easings.h"
 
 #endif // SCREENS_H
