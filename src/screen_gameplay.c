@@ -969,6 +969,7 @@ void UpdateStage3()
 				{
 					winState = 1;
 					finishScreen = 1; // ending
+					rayTimer = 0;
 				}			
 					
 				if ( CheckCollisionPointRec( smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position, rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[j] ].rect ) )
