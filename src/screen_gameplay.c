@@ -26,6 +26,7 @@
 #include "raylib.h"
 #include "screens.h"
 
+#include "raymath.h"
 
 //----------------------------------------------------------------------------------
 // Module Variables Definition (local)
@@ -34,6 +35,8 @@ static int framesCounter = 0;
 static int finishScreen = 0;
 
 extern Texture2D instruction ; /// This is cover Texture
+
+int winState;
 
 struct RadarObject
 {
@@ -64,10 +67,6 @@ struct StageManager
 	struct Stage stage3;
 	
 	struct Stage* ptrStageToAct;
-	
-	struct GameObject screenEndingLose;
-	struct GameObject screenEndingNice;
-	struct GameObject screenEndingRayLib;
 	
 	struct GameObject day1;
 	struct GameObject day2;
@@ -322,6 +321,7 @@ void InitStage1()
 	stage1Data.asteroidShowCurr = 0 ;
 	radarObject.rotate = -1;
 }
+float fadesParam = 1.0f;
 
 int counterRudal = 0;
 void UpdateStage1()
@@ -366,6 +366,11 @@ void UpdateStage1()
 				if( smallMissile.count <= 0)
 					break;
 				
+				if ( CheckCollisionPointRec( radarObject.dot.position, smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[j] ].rect ) )
+				{
+					winState = 0;
+					finishScreen = 1; // ending
+				}	
 				if ( CheckCollisionPointRec( smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position, smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[j] ].rect ) )
 				{
 					PlaySound(fxExplode);
@@ -456,6 +461,19 @@ void DrawStage1()
 	
 	//DrawRectangleRec( radarObject.dot.rect , WHITE );
 	DrawTextureExCenter(*radarObject.dot.ptrTexture, radarObject.dot.position, 0.0f, 1.0f, WHITE);
+
+	
+	Vector2 pos = { 10, 10 };
+	
+	fadesParam -= 0.02f;
+	if( fadesParam >= 0.1f  )
+	{
+		DrawTextEx(font, "DAY 1", pos, font.baseSize*3.0f, 4, Fade( MAROON, fadesParam ) );
+	}
+	else
+	{
+		fadesParam = 1.02f;
+	}
 }
 
 //////////////////////
@@ -546,6 +564,12 @@ void UpdateStage2()
 				if( smallMissile.count <= 0)
 					break;
 				
+				if ( CheckCollisionPointRec( radarObject.dot.position, smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[j] ].rect ) )
+				{
+					winState = 0;
+					finishScreen = 1; // ending
+				}	
+				
 				if ( CheckCollisionPointRec( smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position, smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[j] ].rect ) )
 				{
 					PlaySound(fxExplode);
@@ -585,6 +609,12 @@ void UpdateStage2()
 			{
 				if( smallMissile.count <= 0)
 					break;
+				
+				if ( CheckCollisionPointRec( radarObject.dot.position, bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].rect ) )
+				{
+					winState = 0;
+					finishScreen = 1; // ending
+				}	
 				
 				if ( CheckCollisionPointRec( smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position, bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].rect ) )
 				{
@@ -680,11 +710,28 @@ void DrawStage2()
 	
 	//DrawRectangleRec( radarObject.dot.rect , WHITE );
 	DrawTextureExCenter(*radarObject.dot.ptrTexture, radarObject.dot.position, 0.0f, 1.0f, WHITE);
+	
+	
+	Vector2 pos = { 10, 10 };
+	
+	fadesParam -= 0.02f;
+	if( fadesParam >= 0.1f  )
+	{
+		DrawTextEx(font, "DAY 2", pos, font.baseSize*3.0f, 4, Fade( MAROON, fadesParam ) );
+	}
+	else
+	{
+		fadesParam = 1.02f;
+	}
 }
 
 //////////////////////
+
+Rectangle boxForRay;
 void InitStage3()
 {
+	boxForRay = (Rectangle){ radarObject.dot.position.x - 45, radarObject.dot.position.y - 45,
+								45*2, 45*2};
 	ResetAllData();
 	
 	smallMissile.count = 0;
@@ -726,6 +773,10 @@ void InitStage3()
 	
 	radarObject.rotate = -1;
 }
+
+static int rayState = 0; // 0 normal, 1 spinning, 2 + cricle move
+static float rayRotate = 0;
+static int rayTimer = 0;
 void UpdateStage3()
 {
 	//smallAsteroid
@@ -750,17 +801,65 @@ void UpdateStage3()
 		bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[i] ].rect.y += bigAsteroid.speed[ bigAsteroid.bigAsteroidToDraw[i] ].y;
 	}
 	
-	//rayAsteroid
-	for(int i = 0; i< rayAsteroid.count; i++)
+	switch(rayState)
 	{
-		rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].position.x += rayAsteroid.speed[ rayAsteroid.rayAsteroidToDraw[i] ].x;
-		rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].position.y += rayAsteroid.speed[ rayAsteroid.rayAsteroidToDraw[i] ].y;
+		case 0:
+			//rayAsteroid
+			for(int i = 0; i< rayAsteroid.count; i++)
+			{
+				rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].position.x += rayAsteroid.speed[ rayAsteroid.rayAsteroidToDraw[i] ].x;
+				rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].position.y += rayAsteroid.speed[ rayAsteroid.rayAsteroidToDraw[i] ].y;
+				
+				/// Update Rectangle
+				rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].rect.x += rayAsteroid.speed[ rayAsteroid.rayAsteroidToDraw[i] ].x;
+				rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].rect.y += rayAsteroid.speed[ rayAsteroid.rayAsteroidToDraw[i] ].y;
+			}
+			
+			if( CheckCollisionRecs( rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[0] ].rect, boxForRay ) && rayTimer != 1 )
+			{
+				rayState = 1;
+					StopMusicStream(music);
+					
+				    SetMusicVolume(fxRayAudio, 0.9f);
+					PlayMusicStream(fxRayAudio);
+			}
+		break;
 		
-		/// Update Rectangle
-		rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].rect.x += rayAsteroid.speed[ rayAsteroid.rayAsteroidToDraw[i] ].x;
-		rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].rect.y += rayAsteroid.speed[ rayAsteroid.rayAsteroidToDraw[i] ].y;
-	}
+		case 1:
+			rayRotate += 1.0f;
+			 UpdateMusicStream(fxRayAudio); 
+			 
+			 rayTimer++;
+			 if(rayTimer >= 400)
+			 {
+				 rayTimer = 1;
+				 rayState = 0;
+			 }
+			
+		break;
+		
+		case 2:
+/* 			rayRotate += 1.0f;
+			UpdateMusicStream(fxRayAudio); 
+
+						//rayAsteroid
+			for(int i = 0; i< rayAsteroid.count; i++)
+			{
+				Vector2 oldPos = rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].position;
+				oldPos
+				
+				
+				rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].position.x = 
+				oldPos.x * cosf(0.5) - 
+				oldPos.y * sinf(0.5) ;
+				
+				rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].position.y = 
+				oldPos.x * sinf(0.5) + 
+				oldPos.y * cosf(0.5) ;
+			} */
+		break;
 	
+	}
 	// missile
 	for(int i = 0; i< smallMissile.count; i++)
 	{
@@ -863,6 +962,12 @@ void UpdateStage3()
 				if( smallMissile.count <= 0)
 					break;
 				
+				if ( CheckCollisionPointRec( radarObject.dot.position, rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[j] ].rect ) )
+				{
+					winState = 1;
+					finishScreen = 1; // ending
+				}			
+					
 				if ( CheckCollisionPointRec( smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position, rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[j] ].rect ) )
 				{
 					PlaySound(fxExplode);
@@ -930,10 +1035,33 @@ void DrawStage3()
 		DrawTextureExCenter(*bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[i] ].ptrTexture, bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[i] ].position, 0.0f, 1.0f, WHITE);
 	}
 	
-	//rayAsteroid
-	for(int i = 0; i< rayAsteroid.count; i++)
+	
+	switch(rayState)
 	{
-		DrawTextureExCenter(*rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].ptrTexture, rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].position, 0.0f, 1.0f, WHITE);
+		case 0:	
+			//rayAsteroid
+			for(int i = 0; i< rayAsteroid.count; i++)
+			{
+				DrawTextureExCenter(*rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].ptrTexture, rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].position, 0.0f, 1.0f, WHITE);
+			}
+	
+			break;
+		
+		case 1:
+			//rayAsteroid
+			for(int i = 0; i< rayAsteroid.count; i++)
+			{
+				DrawTextureExCenter(*rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].ptrTexture, rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].position, rayRotate, 1.0f, WHITE);
+			}
+		break;
+		
+		case 2:
+/* 			//rayAsteroid
+			for(int i = 0; i< rayAsteroid.count; i++)
+			{
+				DrawTextureExCenter(*rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].ptrTexture, rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].position, rayRotate, 1.0f, WHITE);
+			} */
+		break;
 	}
 	
 	// Missile
@@ -950,6 +1078,19 @@ void DrawStage3()
 	
 	////DrawRectangleRec( radarObject.dot.rect , WHITE );
 	DrawTextureExCenter(*radarObject.dot.ptrTexture, radarObject.dot.position, 0.0f, 1.0f, WHITE);
+	
+	
+		Vector2 pos = { 10, 10 };
+	
+	fadesParam -= 0.02f;
+	if( fadesParam >= 0.1f  )
+	{
+		DrawTextEx(font, "DAY RAY???", pos, font.baseSize*3.0f, 4, Fade( MAROON, fadesParam ) );
+	}
+	else
+	{
+		fadesParam = 1.02f;
+	}
 }
 
 //////////////////////////////////
@@ -1008,18 +1149,6 @@ void UpdateStageManager()
 }
 void DrawStageManager()
 {
-	if(stageManager.endingLose)
-	{
-		
-	}
-	if(stageManager.endingNextDay)
-	{
-		
-	}
-	if(stageManager.endingRayLib)
-	{
-		
-	}
 	
 	stageManager.ptrStageToAct->Draw();
 }
@@ -1031,7 +1160,8 @@ void DrawStageManager()
 // Gameplay Screen Initialization logic
 void InitGameplayScreen(void)
 {
-	
+	SetMusicVolume(music, 0.5f);
+
 	stageManager.Init = InitStageManager;
 	stageManager.Update = UpdateStageManager;
 	stageManager.Draw = DrawStageManager;
@@ -1067,7 +1197,7 @@ void DrawGameplayScreen(void)
 	stageManager.Draw();
     // TODO: Draw GAMEPLAY screen here!
 /*     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), PURPLE);
-    Vector2 pos = { 20, 10 };
+    Vector2 pos = { 10, 10 };
     DrawTextEx(font, "GAMEPLAY SCREEN", pos, font.baseSize*3.0f, 4, MAROON);
     DrawText("PRESS ENTER or TAP to JUMP to ENDING SCREEN", 130, 220, 20, MAROON); */
 }

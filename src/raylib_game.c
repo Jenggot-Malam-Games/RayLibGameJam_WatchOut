@@ -26,6 +26,7 @@
 GameScreen currentScreen = LOGO;
 Font font = { 0 };
 Music music = { 0 };
+Music fxRayAudio = { 0 };
 Sound fxCoin = { 0 };
 Sound fxExplode = { 0 };
 
@@ -69,6 +70,8 @@ int main(void)
     music = LoadMusicStream("resources/bgm.ogg");
     fxCoin = LoadSound("resources/rocket.ogg");
     fxExplode = LoadSound("resources/explode.ogg");
+	
+    fxRayAudio = LoadMusicStream("resources/rayaudio.ogg");
 
     SetMusicVolume(music, 1.0f);
     PlayMusicStream(music);

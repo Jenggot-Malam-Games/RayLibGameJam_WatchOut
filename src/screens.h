@@ -39,6 +39,7 @@ extern Font font;
 extern Music music;
 extern Sound fxCoin;
 extern Sound fxExplode;
+extern Music fxRayAudio;
 
 #ifdef __cplusplus
 extern "C" {            // Prevents name mangling of functions
@@ -131,6 +132,8 @@ extern struct GameObject missilesBig[BIGMISSILECOUNT];
 
 
 extern struct GameObject raylibMonster[4];
+
+extern int winState; // 0 lose, 1 raylib
 
 /* extern struct GameObject boss1[5];
 extern struct GameObject bossRay[50];

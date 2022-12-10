@@ -62,10 +62,20 @@ void DrawEndingScreen(void)
 {
     // TODO: Draw ENDING screen here!
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLUE);
-
-    Vector2 pos = { 20, 10 };
-    DrawTextEx(font, "ENDING SCREEN", pos, font.baseSize*3.0f, 4, DARKBLUE);
-    DrawText("PRESS ENTER or TAP to RETURN to TITLE SCREEN", 120, 220, 20, DARKBLUE);
+	Vector2 pos = { 20, 10 };
+	switch(winState)
+	{
+		case 0:
+			DrawTexture(textureData[6] , 0,0, RED);
+			DrawTextEx(font, "YOU LOSE", pos, font.baseSize*3.0f, 4, DARKBLUE);
+			DrawText("YOUR BASE DESTROYED", 120, 220, 20, DARKBLUE);
+		break;
+		case 1:
+			DrawTexture(textureData[6] , 0,0, RED);
+			DrawTextEx(font, "YOU, RAYLIBED", pos, font.baseSize*3.0f, 4, DARKBLUE);
+			DrawText("RAYLIB IS DOMINATING YOU", 0, 220, 20, DARKBLUE);
+		break;
+	}
 }
 
 // Ending Screen Unload logic
