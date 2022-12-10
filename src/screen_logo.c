@@ -98,6 +98,8 @@ struct GameObject missiles[MISSILECOUNT];
 
 struct GameObject asteroidsBig[BIGASTEROIDCOUNT];
 struct GameObject missilesBig[BIGMISSILECOUNT];
+
+struct GameObject raylibMonster[4];
 /////////////////////////
 
 //
@@ -149,27 +151,38 @@ void InitLogoScreen(void)
 	textureData[5] = LoadTexture("resources/bgcircle.png");
 	textureData[6] = LoadTexture("resources/bgcircle2.png");
 	
-
 	textureData[7] = LoadTexture("resources/line.png");
+	
+	textureData[8] = LoadTexture("resources/day1.png");
+	textureData[9] = LoadTexture("resources/day2.png");
+	textureData[10] = LoadTexture("resources/dayRay.png");
+	
+	textureData[11] = LoadTexture("resources/raylibMonster.png");
 
 	/////
 	
-	for(int i =0; i < 20; i++)
+	for(int i =0; i < 4; i++)
+	{
+		raylibMonster[i].ptrTexture = &textureData[11]; // 11 raylibMonster
+	}
+	
+	
+	for(int i =0; i < ASTEROIDCOUNT; i++)
 	{
 		asteroids[i].ptrTexture = &textureData[0]; // 0 Asteroid
 	}
 	
-	for(int i =0; i < 50; i++)
+	for(int i =0; i < MISSILECOUNT; i++)
 	{
 		missiles[i].ptrTexture = &textureData[3]; // 3 missile
 	}
 	
-	for(int i =0; i < 20; i++)
+	for(int i =0; i < BIGASTEROIDCOUNT; i++)
 	{
 		asteroidsBig[i].ptrTexture = &textureData[1]; // 1 Asteroid
 	}
 	
-	for(int i =0; i < 50; i++)
+	for(int i =0; i < BIGMISSILECOUNT; i++)
 	{
 		missilesBig[i].ptrTexture = &textureData[2]; // 2 missile
 	}

@@ -66,12 +66,18 @@ struct StageManager
 	struct Stage* ptrStageToAct;
 	
 	struct GameObject screenEndingLose;
-	struct GameObject screenEndingNextDay;
+	struct GameObject screenEndingNice;
 	struct GameObject screenEndingRayLib;
+	
+	struct GameObject day1;
+	struct GameObject day2;
+	struct GameObject dayRay;
 	
 	bool endingLose;
 	bool endingNextDay;
 	bool endingRayLib;
+	
+	int gameState; // 0 lose, 1 nice, 2 RayLib
 	
 	struct GameObject* ptrScreenEnding;
 	
@@ -104,6 +110,18 @@ struct SmallAsteroid
 	struct GameObject * theAsteroids;
 } smallAsteroid;
 
+struct RayAsteroid
+{
+	int count;
+	int defence[ 4 ];
+	
+	Vector2 speed[ 4 ];
+	
+	int rayAsteroidToDraw[ 4 ];
+	
+	struct GameObject * theRayAsteroids;
+} rayAsteroid;
+
 struct BigMissile
 {
 	int count;
@@ -133,20 +151,19 @@ struct SmallMissile
 
 struct Stage1Data
 {
-	
+	int asteroidShowCurr;
 	int asteroidShowCount;
 } stage1Data;
 
 struct Stage2Data
 {
-	struct GameObject big;
-
+	int asteroidShowCurr;
 	int asteroidShowCount;
 } stage2Data;
 
 struct Stage3Data
 {
-	struct GameObject boss;
+	int asteroidShowCurr;
 	int asteroidShowCount;
 } stage3Data;
 
@@ -200,14 +217,19 @@ void ResetAllData()
 	for(int i = 0; i < ASTEROIDCOUNT; i++)
 	{
 		/// X Y Pos
-		ResetData( &asteroids[i].position, &asteroids[i].rect, asteroids[i].ptrTexture);
-		
+		ResetData( &asteroids[i].position, &asteroids[i].rect, asteroids[i].ptrTexture);	
 	}	
 	
 	for(int i = 0; i < BIGASTEROIDCOUNT; i++)
 	{
 		/// X Pos
 		ResetData( &asteroidsBig[i].position, &asteroidsBig[i].rect, asteroidsBig[i].ptrTexture);
+	}
+	
+	for(int i = 0; i < RAYASTEROIDCOUNT; i++)
+	{
+		/// X Pos
+		ResetData( &raylibMonster[i].position, &raylibMonster[i].rect, raylibMonster[i].ptrTexture);
 	}
 	
 	//// Set Speed of each Asteroid toward the middle
@@ -224,6 +246,14 @@ void ResetAllData()
 		/// X Y speed
 		bigAsteroid.speed[i].x = (radarObject.circle.position.x - asteroidsBig[i].position.x) * speedMul;
 		bigAsteroid.speed[i].y = (radarObject.circle.position.y - asteroidsBig[i].position.y ) * speedMul;
+	}
+	
+	/// RayLIB monster
+	for(int i = 0; i < 4; i++)
+	{
+		/// X Y speed
+		rayAsteroid.speed[i].x = (radarObject.circle.position.x - raylibMonster[i].position.x) * speedMul;
+		rayAsteroid.speed[i].y = (radarObject.circle.position.y - raylibMonster[i].position.y ) * speedMul;
 	}
 	
 	
@@ -287,6 +317,9 @@ void InitStage1()
 		smallAsteroid.defence[ i ] = 1;
 	}
 	
+	
+	stage1Data.asteroidShowCount = smallAsteroid.count ;
+	stage1Data.asteroidShowCurr = 0 ;
 	radarObject.rotate = -1;
 }
 
@@ -304,11 +337,428 @@ void UpdateStage1()
 		smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].rect.y += smallAsteroid.speed[ smallAsteroid.smallAsteroidToDraw[i] ].y;
 		
 	}	
+	
+	// missile
+	for(int i = 0; i< smallMissile.count; i++)
+	{
+		smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position.x += smallMissile.speed[ smallMissile.smallMissileToDraw[i] ].x;
+		smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position.y += smallMissile.speed[ smallMissile.smallMissileToDraw[i] ].y;
+		
+		// Destroy the missile if outside of the radar
+		if( smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position.x < 0 || 
+				smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position.x > 256 ||
+				smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position.y < 0   ||
+				smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position.y > 256 )
+				{
+					// Reset the destroyed rudal to normal position
+					smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position = radarObject.circle.position;
+					
+					// swap  with last missile before destroying
+					Swap( &smallMissile.smallMissileToDraw[i] , &smallMissile.smallMissileToDraw[ smallMissile.count - 1]);
+					
+					// Destroy ? wkwkwwk
+					smallMissile.count--;
+				}
+				
+		// Check Collision Each Asteroid
+			for(int j = 0; j< smallAsteroid.count; j++)
+			{
+				if( smallMissile.count <= 0)
+					break;
+				
+				if ( CheckCollisionPointRec( smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position, smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[j] ].rect ) )
+				{
+					PlaySound(fxExplode);
+					// DESTROY RUDAL
+					// Reset the destroyed rudal to normal position
+					smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position = radarObject.circle.position;	
+					// swap  with last missile before destroying
+					Swap( &smallMissile.smallMissileToDraw[i] , &smallMissile.smallMissileToDraw[ smallMissile.count - 1]);	
+					// Destroy ? wkwkwwk
+					smallMissile.count--;
+					
+					/////////////////////////////////////////////////
+					smallAsteroid.defence[ j ]--;
+					// still strong
+					if( smallAsteroid.defence[ j ] > 0 )
+						continue;
+
+					// DESTROY ASTEROID
+					// Reset Asteroid
+					ResetData( &smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[j] ].position, &smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[j] ].rect, smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[j] ].ptrTexture);
+					// set back defense to 2
+					smallAsteroid.defence[ j ] = 1;
+					
+					// swap  with last Asteroid before destroying
+					Swap( &smallAsteroid.smallAsteroidToDraw[j] , &smallAsteroid.smallAsteroidToDraw[ smallAsteroid.count - 1]);
+					
+					// Destroy ? wkwkwwk
+					smallAsteroid.count--;
+					
+					
+					stage1Data.asteroidShowCurr++;
+					
+				}
+			}
+
+								/// Won the stage
+			if( stage1Data.asteroidShowCurr >= stage1Data.asteroidShowCount )
+			{
+				stage1Data.asteroidShowCurr = 0;
+				
+				// change to stage 2
+				stageManager.ptrStageToAct = &stageManager.stage2;
+				stageManager.ptrStageToAct->Init();
+			}
+	}
+	
+	if (IsKeyPressed(KEY_ENTER) || IsGestureDetected(GESTURE_TAP))
+	{
+		if(counterRudal == 0)
+		{
+			if( RudalLaunch() ) PlaySoundMulti(fxCoin);
+			
+			counterRudal = 15;
+		}
+	}
+	counterRudal--;
+	if(counterRudal < 0)
+		counterRudal = 0;
+	
+	radarObject.rotate++;
+	if( radarObject.rotate >= 360 )
+	{
+		radarObject.rotate = 0;
+	}
+	
+}
+void DrawStage1()
+{
+	DrawTextureExCenter(*radarObject.circle2.ptrTexture, radarObject.circle2.position, 0.0f, 1.0f, WHITE);
+	//smallAsteroid
+	for(int i = 0; i< smallAsteroid.count; i++)
+	{
+		////DrawRectangleRec( smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].rect , WHITE );
+		DrawTextureExCenter(*smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].ptrTexture, smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].position, 0.0f, 1.0f, WHITE);
+	}	
+	
+	// Missile
+	for(int i = 0; i< smallMissile.count; i++)
+	{
+		DrawTextureExCenter(*smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].ptrTexture, smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position, 0.0f, 1.0f, WHITE);
+	}
+	
+	/// Draw Radar Design
+	
+	DrawTextureEx(*radarObject.line.ptrTexture, radarObject.line.position, radarObject.rotate, 1.0f, WHITE);
+	
+	DrawTextureExCenter(*radarObject.circle.ptrTexture, radarObject.circle.position, 0.0f, 1.0f, WHITE);
+	
+	//DrawRectangleRec( radarObject.dot.rect , WHITE );
+	DrawTextureExCenter(*radarObject.dot.ptrTexture, radarObject.dot.position, 0.0f, 1.0f, WHITE);
+}
+
+//////////////////////
+void InitStage2()
+{
+	ResetAllData();
+	
+	smallMissile.count = 0;
+	smallMissile.damage = 1;
+	smallMissile.theMissiles =  &missiles[0];
+	smallMissile.speedFactor = (Vector2){ 20.0f , 20.0f };
+	for(int i = 0 ; i< MISSILECOUNT; i++)
+		smallMissile.smallMissileToDraw[ i ] = i;
+	
+	
+	bigAsteroid.count = 3;
+	//bigAsteroid.speed = (Vector2){ 128 , 128 };
+	bigAsteroid.theBigAsteroids = &asteroidsBig[0];
+	for(int i = 0 ; i< BIGASTEROIDCOUNT; i++)
+	{
+		bigAsteroid.bigAsteroidToDraw[ i ] = i;
+		bigAsteroid.defence[ i ] = 3;
+	}
+	
+	
+	smallAsteroid.count = 8;
+	//smallAsteroid.speed = (Vector2){ 128 , 128 };
+	smallAsteroid.theAsteroids = &asteroids[0];
+	for(int i = 0 ; i< ASTEROIDCOUNT; i++)
+	{
+		smallAsteroid.smallAsteroidToDraw[ i ] = i;
+		smallAsteroid.defence[ i ] = 1;
+	}
+	
+	stage2Data.asteroidShowCount = smallAsteroid.count + bigAsteroid.count;
+	
+	radarObject.rotate = -1;
+}
+void UpdateStage2()
+{
+	//smallAsteroid
+	for(int i = 0; i< smallAsteroid.count; i++)
+	{
+		smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].position.x += smallAsteroid.speed[ smallAsteroid.smallAsteroidToDraw[i] ].x;
+		smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].position.y += smallAsteroid.speed[ smallAsteroid.smallAsteroidToDraw[i] ].y;
+		
+		/// Update Rectangle
+		smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].rect.x += smallAsteroid.speed[ smallAsteroid.smallAsteroidToDraw[i] ].x;
+		smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].rect.y += smallAsteroid.speed[ smallAsteroid.smallAsteroidToDraw[i] ].y;
+		
+	}	
 	//bigAsteroid
 	for(int i = 0; i< bigAsteroid.count; i++)
 	{
 		bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[i] ].position.x += bigAsteroid.speed[ bigAsteroid.bigAsteroidToDraw[i] ].x;
 		bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[i] ].position.y += bigAsteroid.speed[ bigAsteroid.bigAsteroidToDraw[i] ].y;
+		
+		/// Update Rectangle
+		bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[i] ].rect.x += bigAsteroid.speed[ bigAsteroid.bigAsteroidToDraw[i] ].x;
+		bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[i] ].rect.y += bigAsteroid.speed[ bigAsteroid.bigAsteroidToDraw[i] ].y;
+	}
+	
+	// missile
+	for(int i = 0; i< smallMissile.count; i++)
+	{
+		smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position.x += smallMissile.speed[ smallMissile.smallMissileToDraw[i] ].x;
+		smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position.y += smallMissile.speed[ smallMissile.smallMissileToDraw[i] ].y;
+		
+		// Destroy the missile if outside of the radar
+		if( smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position.x < 0 || 
+				smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position.x > 256 ||
+				smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position.y < 0   ||
+				smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position.y > 256 )
+				{
+					// Reset the destroyed rudal to normal position
+					smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position = radarObject.circle.position;
+					
+					// swap  with last missile before destroying
+					Swap( &smallMissile.smallMissileToDraw[i] , &smallMissile.smallMissileToDraw[ smallMissile.count - 1]);
+					
+					// Destroy ? wkwkwwk
+					smallMissile.count--;
+				}
+				
+		// Check Collision Each Asteroid
+			for(int j = 0; j< smallAsteroid.count; j++)
+			{
+				if( smallMissile.count <= 0)
+					break;
+				
+				if ( CheckCollisionPointRec( smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position, smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[j] ].rect ) )
+				{
+					PlaySound(fxExplode);
+					// DESTROY RUDAL
+					// Reset the destroyed rudal to normal position
+					smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position = radarObject.circle.position;	
+					// swap  with last missile before destroying
+					Swap( &smallMissile.smallMissileToDraw[i] , &smallMissile.smallMissileToDraw[ smallMissile.count - 1]);	
+					// Destroy ? wkwkwwk
+					smallMissile.count--;
+					
+					/////////////////////////////////////////////////
+					smallAsteroid.defence[ j ]--;
+					// still strong
+					if( smallAsteroid.defence[ j ] > 0 )
+						continue;
+
+					// DESTROY ASTEROID
+					// Reset Asteroid
+					ResetData( &smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[j] ].position, &smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[j] ].rect, smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[j] ].ptrTexture);
+					// set back defense to 2
+					smallAsteroid.defence[ j ] = 1;
+					
+					// swap  with last Asteroid before destroying
+					Swap( &smallAsteroid.smallAsteroidToDraw[j] , &smallAsteroid.smallAsteroidToDraw[ smallAsteroid.count - 1]);
+					
+					// Destroy ? wkwkwwk
+					smallAsteroid.count--;
+					
+					
+					stage2Data.asteroidShowCurr++;
+				}
+			}	
+			
+			// Big Asteroid
+			for(int j = 0; j< bigAsteroid.count; j++)
+			{
+				if( smallMissile.count <= 0)
+					break;
+				
+				if ( CheckCollisionPointRec( smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position, bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].rect ) )
+				{
+					PlaySound(fxExplode);
+					// DESTROY RUDAL
+					// Reset the destroyed rudal to normal position
+					smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position = radarObject.circle.position;	
+					// swap  with last missile before destroying
+					Swap( &smallMissile.smallMissileToDraw[i] , &smallMissile.smallMissileToDraw[ smallMissile.count - 1]);	
+					// Destroy ? wkwkwwk
+					smallMissile.count--;
+					
+					/////////////////////////////////////////////////
+					bigAsteroid.defence[ j ]--;
+					// still strong
+					if( bigAsteroid.defence[ j ] > 0 )
+						continue;
+
+					// DESTROY ASTEROID
+					// Reset Asteroid
+					ResetData( &bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].position, &bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].rect, bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].ptrTexture);
+					// set back defense to 2
+					bigAsteroid.defence[ j ] = 3;
+					
+					// swap  with last Asteroid before destroying
+					Swap( &bigAsteroid.bigAsteroidToDraw[j] , &bigAsteroid.bigAsteroidToDraw[ bigAsteroid.count - 1]);
+					
+					// Destroy ? wkwkwwk
+					bigAsteroid.count--;
+					
+					
+					stage2Data.asteroidShowCurr++;
+				}
+			}	
+		
+							/// Won the stage
+			if( stage2Data.asteroidShowCurr >= stage2Data.asteroidShowCount )
+			{
+				stage2Data.asteroidShowCurr = 0;
+				
+				// change to stage 2
+				stageManager.ptrStageToAct = &stageManager.stage3;
+				stageManager.ptrStageToAct->Init();
+			}
+	}
+	
+	if (IsKeyPressed(KEY_ENTER) || IsGestureDetected(GESTURE_TAP))
+	{
+		if(counterRudal == 0)
+		{
+			if( RudalLaunch() ) PlaySoundMulti(fxCoin);
+			
+			counterRudal = 15;
+		}
+	}
+	counterRudal--;
+	if(counterRudal < 0)
+		counterRudal = 0;
+	
+	radarObject.rotate++;
+	if( radarObject.rotate >= 360 )
+	{
+		radarObject.rotate = 0;
+	}
+}
+void DrawStage2()
+{
+	DrawTextureExCenter(*radarObject.circle2.ptrTexture, radarObject.circle2.position, 0.0f, 1.0f, WHITE);
+	//smallAsteroid
+	for(int i = 0; i< smallAsteroid.count; i++)
+	{
+		////DrawRectangleRec( smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].rect , WHITE );
+		DrawTextureExCenter(*smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].ptrTexture, smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].position, 0.0f, 1.0f, WHITE);
+	}	
+	//bigAsteroid
+	for(int i = 0; i< bigAsteroid.count; i++)
+	{
+		//DrawRectangleRec( bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[i] ].rect , WHITE );
+		DrawTextureExCenter(*bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[i] ].ptrTexture, bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[i] ].position, 0.0f, 1.0f, WHITE);
+	}
+	
+	// Missile
+	for(int i = 0; i< smallMissile.count; i++)
+	{
+		DrawTextureExCenter(*smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].ptrTexture, smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position, 0.0f, 1.0f, WHITE);
+	}
+	
+	/// Draw Radar Design
+	
+	DrawTextureEx(*radarObject.line.ptrTexture, radarObject.line.position, radarObject.rotate, 1.0f, WHITE);
+	
+	DrawTextureExCenter(*radarObject.circle.ptrTexture, radarObject.circle.position, 0.0f, 1.0f, WHITE);
+	
+	//DrawRectangleRec( radarObject.dot.rect , WHITE );
+	DrawTextureExCenter(*radarObject.dot.ptrTexture, radarObject.dot.position, 0.0f, 1.0f, WHITE);
+}
+
+//////////////////////
+void InitStage3()
+{
+	ResetAllData();
+	
+	smallMissile.count = 0;
+	smallMissile.damage = 1;
+	smallMissile.theMissiles =  &missiles[0];
+	smallMissile.speedFactor = (Vector2){ 20.0f , 20.0f };
+	for(int i = 0 ; i< MISSILECOUNT; i++)
+		smallMissile.smallMissileToDraw[ i ] = i;
+	
+	
+	bigAsteroid.count = 5;
+	//bigAsteroid.speed = (Vector2){ 128 , 128 };
+	bigAsteroid.theBigAsteroids = &asteroidsBig[0];
+	for(int i = 0 ; i< BIGASTEROIDCOUNT; i++)
+	{
+		bigAsteroid.bigAsteroidToDraw[ i ] = i;
+		bigAsteroid.defence[ i ] = 2;
+	}
+	
+	
+	smallAsteroid.count = 4;
+	//smallAsteroid.speed = (Vector2){ 128 , 128 };
+	smallAsteroid.theAsteroids = &asteroids[0];
+	for(int i = 0 ; i< ASTEROIDCOUNT; i++)
+	{
+		smallAsteroid.smallAsteroidToDraw[ i ] = i;
+		smallAsteroid.defence[ i ] = 1;
+	}
+	
+	rayAsteroid.count = RAYASTEROIDCOUNT;
+	rayAsteroid.theRayAsteroids = &raylibMonster[0];
+	for(int i = 0 ; i< RAYASTEROIDCOUNT; i++)
+	{
+		rayAsteroid.rayAsteroidToDraw[ i ] = i;
+		rayAsteroid.defence[ i ] = 9999; /// Uwow
+	}
+	
+	stage3Data.asteroidShowCount = smallAsteroid.count + bigAsteroid.count + rayAsteroid.count;
+	
+	radarObject.rotate = -1;
+}
+void UpdateStage3()
+{
+	//smallAsteroid
+	for(int i = 0; i< smallAsteroid.count; i++)
+	{
+		smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].position.x += smallAsteroid.speed[ smallAsteroid.smallAsteroidToDraw[i] ].x;
+		smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].position.y += smallAsteroid.speed[ smallAsteroid.smallAsteroidToDraw[i] ].y;
+		
+		/// Update Rectangle
+		smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].rect.x += smallAsteroid.speed[ smallAsteroid.smallAsteroidToDraw[i] ].x;
+		smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].rect.y += smallAsteroid.speed[ smallAsteroid.smallAsteroidToDraw[i] ].y;
+		
+	}	
+	//bigAsteroid
+	for(int i = 0; i< bigAsteroid.count; i++)
+	{
+		bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[i] ].position.x += bigAsteroid.speed[ bigAsteroid.bigAsteroidToDraw[i] ].x;
+		bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[i] ].position.y += bigAsteroid.speed[ bigAsteroid.bigAsteroidToDraw[i] ].y;
+		
+		/// Update Rectangle
+		bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[i] ].rect.x += bigAsteroid.speed[ bigAsteroid.bigAsteroidToDraw[i] ].x;
+		bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[i] ].rect.y += bigAsteroid.speed[ bigAsteroid.bigAsteroidToDraw[i] ].y;
+	}
+	
+	//rayAsteroid
+	for(int i = 0; i< rayAsteroid.count; i++)
+	{
+		rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].position.x += rayAsteroid.speed[ rayAsteroid.rayAsteroidToDraw[i] ].x;
+		rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].position.y += rayAsteroid.speed[ rayAsteroid.rayAsteroidToDraw[i] ].y;
+		
+		/// Update Rectangle
+		rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].rect.x += rayAsteroid.speed[ rayAsteroid.rayAsteroidToDraw[i] ].x;
+		rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].rect.y += rayAsteroid.speed[ rayAsteroid.rayAsteroidToDraw[i] ].y;
 	}
 	
 	// missile
@@ -370,27 +820,15 @@ void UpdateStage1()
 				}
 			}	
 			
-			//bigAsteroid
-/* 			for(int j = 0; j< bigAsteroid.count; j++)
+			// Big Asteroid
+			for(int j = 0; j< bigAsteroid.count; j++)
 			{
-				Rectangle recSmallAsteroid = (Rectangle)
-				{
-						( bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].position.x - 
-						(bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].ptrTexture->width/2) ),
-						
-						( bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].position.y - 
-						(bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].ptrTexture->height/2) ),
-						
-						( bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].position.x + 
-						(bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].ptrTexture->width/2) ),
-						
-						( bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].position.y + 
-						(bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].ptrTexture->height/2) )		
-				};
+				if( smallMissile.count <= 0)
+					break;
 				
-				
-				if ( CheckCollisionRecs( recMissile, recSmallAsteroid ) )
+				if ( CheckCollisionPointRec( smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position, bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].rect ) )
 				{
+					PlaySound(fxExplode);
 					// DESTROY RUDAL
 					// Reset the destroyed rudal to normal position
 					smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position = radarObject.circle.position;	
@@ -398,11 +836,18 @@ void UpdateStage1()
 					Swap( &smallMissile.smallMissileToDraw[i] , &smallMissile.smallMissileToDraw[ smallMissile.count - 1]);	
 					// Destroy ? wkwkwwk
 					smallMissile.count--;
-				
-				
+					
+					/////////////////////////////////////////////////
+					bigAsteroid.defence[ j ]--;
+					// still strong
+					if( bigAsteroid.defence[ j ] > 0 )
+						continue;
+
 					// DESTROY ASTEROID
 					// Reset Asteroid
-					ResetData( &bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].position.x, &bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].position.y);
+					ResetData( &bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].position, &bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].rect, bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[j] ].ptrTexture);
+					// set back defense to 2
+					bigAsteroid.defence[ j ] = 3;
 					
 					// swap  with last Asteroid before destroying
 					Swap( &bigAsteroid.bigAsteroidToDraw[j] , &bigAsteroid.bigAsteroidToDraw[ bigAsteroid.count - 1]);
@@ -410,8 +855,44 @@ void UpdateStage1()
 					// Destroy ? wkwkwwk
 					bigAsteroid.count--;
 				}
-			}	 */
-		
+			}	
+			
+			// Ray Asteroid
+			for(int j = 0; j< rayAsteroid.count; j++)
+			{
+				if( smallMissile.count <= 0)
+					break;
+				
+				if ( CheckCollisionPointRec( smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position, rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[j] ].rect ) )
+				{
+					PlaySound(fxExplode);
+					// DESTROY RUDAL
+					// Reset the destroyed rudal to normal position
+					smallMissile.theMissiles[ smallMissile.smallMissileToDraw[i] ].position = radarObject.circle.position;	
+					// swap  with last missile before destroying
+					Swap( &smallMissile.smallMissileToDraw[i] , &smallMissile.smallMissileToDraw[ smallMissile.count - 1]);	
+					// Destroy ? wkwkwwk
+					smallMissile.count--;
+					
+					/////////////////////////////////////////////////
+					rayAsteroid.defence[ j ]--;
+					// still strong
+					if( rayAsteroid.defence[ j ] > 0 )
+						continue;
+
+					// DESTROY ASTEROID
+					// Reset Asteroid
+					ResetData( &rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[j] ].position, &rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[j] ].rect, rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[j] ].ptrTexture);
+					// set back defense to 
+					rayAsteroid.defence[ j ] = 9999;
+					
+					// swap  with last Asteroid before destroying
+					Swap( &rayAsteroid.rayAsteroidToDraw[j] , &rayAsteroid.rayAsteroidToDraw[ rayAsteroid.count - 1]);
+					
+					// Destroy ? wkwkwwk
+					rayAsteroid.count--;
+				}
+			}	
 		
 	}
 	
@@ -421,7 +902,7 @@ void UpdateStage1()
 		{
 			if( RudalLaunch() ) PlaySoundMulti(fxCoin);
 			
-			counterRudal = 25;
+			counterRudal = 15;
 		}
 	}
 	counterRudal--;
@@ -433,25 +914,26 @@ void UpdateStage1()
 	{
 		radarObject.rotate = 0;
 	}
-	
 }
-void DrawStage1()
+void DrawStage3()
 {
-/* 	DrawTextureExCenter(*asteroids[0].ptrTexture, asteroids[0].position, 0.0f, 1.0f, WHITE);
-	DrawTextureExCenter(*asteroids[1].ptrTexture, asteroids[1].position, 0.0f, 1.0f, WHITE); */
-	
-	
 	DrawTextureExCenter(*radarObject.circle2.ptrTexture, radarObject.circle2.position, 0.0f, 1.0f, WHITE);
 	//smallAsteroid
 	for(int i = 0; i< smallAsteroid.count; i++)
 	{
-		//DrawRectangleRec( smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].rect , WHITE );
+		////DrawRectangleRec( smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].rect , WHITE );
 		DrawTextureExCenter(*smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].ptrTexture, smallAsteroid.theAsteroids[ smallAsteroid.smallAsteroidToDraw[i] ].position, 0.0f, 1.0f, WHITE);
 	}	
 	//bigAsteroid
 	for(int i = 0; i< bigAsteroid.count; i++)
 	{
 		DrawTextureExCenter(*bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[i] ].ptrTexture, bigAsteroid.theBigAsteroids[ bigAsteroid.bigAsteroidToDraw[i] ].position, 0.0f, 1.0f, WHITE);
+	}
+	
+	//rayAsteroid
+	for(int i = 0; i< rayAsteroid.count; i++)
+	{
+		DrawTextureExCenter(*rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].ptrTexture, rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[i] ].position, 0.0f, 1.0f, WHITE);
 	}
 	
 	// Missile
@@ -466,36 +948,8 @@ void DrawStage1()
 	
 	DrawTextureExCenter(*radarObject.circle.ptrTexture, radarObject.circle.position, 0.0f, 1.0f, WHITE);
 	
-	DrawRectangleRec( radarObject.dot.rect , WHITE );
+	////DrawRectangleRec( radarObject.dot.rect , WHITE );
 	DrawTextureExCenter(*radarObject.dot.ptrTexture, radarObject.dot.position, 0.0f, 1.0f, WHITE);
-}
-
-//////////////////////
-void InitStage2()
-{
-	
-}
-void UpdateStage2()
-{
-	
-}
-void DrawStage2()
-{
-	
-}
-
-//////////////////////
-void InitStage3()
-{
-	
-}
-void UpdateStage3()
-{
-	
-}
-void DrawStage3()
-{
-	
 }
 
 //////////////////////////////////
@@ -524,7 +978,7 @@ void InitStageManager()
 	
 	stageManager.stage1.Init = InitStage1;
 	stageManager.stage1.Update = UpdateStage1;
-	stageManager.Draw = DrawStage1;
+	stageManager.stage1.Draw = DrawStage1;
 		
 	stageManager.stage2.Init = InitStage2;
 	stageManager.stage2.Update = UpdateStage2;
@@ -534,12 +988,18 @@ void InitStageManager()
 	stageManager.stage3.Update = UpdateStage3;
 	stageManager.stage3.Draw = DrawStage3;
 	
+	//CheckCollisionPointCircle
+	stageManager.day1.ptrTexture = &textureData[8];
+	stageManager.day2.ptrTexture = &textureData[9];
+	stageManager.dayRay.ptrTexture = &textureData[10];
+	
 	////////////////////
-	stageManager.stage1.Init();
-	stageManager.stage2.Init();
-	stageManager.stage3.Init();
+	//stageManager.stage1.Init();
+/* 	stageManager.stage2.Init();
+	stageManager.stage3.Init(); */
 	
 	stageManager.ptrStageToAct = &stageManager.stage1;
+	stageManager.ptrStageToAct->Init();
 	
 }
 void UpdateStageManager()

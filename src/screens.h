@@ -114,6 +114,9 @@ struct GameObject
 #define BIGMISSILECOUNT 50
 
 
+#define RAYASTEROIDCOUNT 4
+
+
 // Load once
 extern Texture2D textureData[TEXTUREDATACOUNT];
 // 0 asteroid
@@ -125,6 +128,9 @@ extern struct GameObject missiles[MISSILECOUNT];
 
 extern struct GameObject asteroidsBig[BIGASTEROIDCOUNT];
 extern struct GameObject missilesBig[BIGMISSILECOUNT];
+
+
+extern struct GameObject raylibMonster[4];
 
 /* extern struct GameObject boss1[5];
 extern struct GameObject bossRay[50];
