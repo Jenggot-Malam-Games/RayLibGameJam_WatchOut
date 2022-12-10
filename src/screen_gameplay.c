@@ -818,7 +818,7 @@ void UpdateStage3()
 			if( CheckCollisionRecs( rayAsteroid.theRayAsteroids[ rayAsteroid.rayAsteroidToDraw[0] ].rect, boxForRay ) && rayTimer != 1 )
 			{
 				rayState = 1;
-					StopMusicStream(music);
+					PauseMusicStream(music);
 					
 				    SetMusicVolume(fxRayAudio, 0.9f);
 					PlayMusicStream(fxRayAudio);
@@ -832,8 +832,11 @@ void UpdateStage3()
 			 rayTimer++;
 			 if(rayTimer >= 400)
 			 {
+				 ResumeMusicStream(music);
 				 rayTimer = 1;
 				 rayState = 0;
+				 
+				 StopMusicStream(fxRayAudio);
 			 }
 			
 		break;
